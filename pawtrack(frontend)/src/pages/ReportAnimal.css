@@ -1,0 +1,326 @@
+/* ReportAnimal.css */
+
+/* --- Color Palette & Variables --- */
+:root {
+  --primary-color: #8B5CF6; /* A nice purple matching your header */
+  --primary-color-dark: #7C3AED;
+  --background-color: #F3F4F6; /* Light gray page background */
+  --card-background: #FFFFFF;
+  --text-color: #1F2937; /* Dark gray for text */
+  --muted-text-color: #6B7280; /* Lighter gray for placeholders/labels */
+  --border-color: #D1D5DB;
+  --error-color: #EF4444;
+  --success-color: #10B981;
+  --focus-ring-color: rgba(139, 92, 246, 0.4);
+}
+
+/* --- Page and Container --- */
+.bg-login-background { /* You had this class on the main div */
+  background-color: var(--background-color);
+}
+.container.py-8 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+.report-form-container {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  padding: 2rem;
+  padding-bottom: 2.5rem;
+  border-radius: 1rem; /* 16px */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+  overflow: hidden; /* Important for animation transitions */
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: 1.5rem; /* Space between form groups */
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem; /* 14px */
+  font-weight: 500;
+  color: var(--muted-text-color);
+  margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+  content: " *";
+  color: var(--error-color);
+}
+
+/* --- Input Fields, Selects & Textareas --- */
+.input-wrapper,
+.select-wrapper {
+  position: relative;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background-color: #F9FAFB; /* Slightly off-white */
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #9CA3AF;
+}
+
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+.input-icon,
+.select-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-text-color);
+  width: 1.25rem; /* 20px */
+  height: 1.25rem;
+}
+
+.input-icon {
+  left: 0.75rem;
+}
+.form-input {
+  padding-left: 2.5rem; /* Make space for the icon */
+}
+
+.select-icon {
+  right: 0.75rem;
+  pointer-events: none; /* Allows clicking through the icon onto the select */
+}
+.form-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2.5rem; /* Make space for the arrow */
+}
+.location-button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.25rem;
+  color: var(--muted-text-color);
+  border-radius: 99px;
+  background-color: transparent;
+  transition: color 0.2s, background-color 0.2s;
+}
+.location-button:hover {
+  color: var(--primary-color);
+  background-color: #F5F3FF;
+}
+
+/* --- Photo Upload --- */
+.photo-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: #F9FAFB;
+  border: 2px dashed var(--border-color);
+  border-radius: 0.75rem; /* 12px */
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.photo-upload-area:hover,
+.photo-upload-area.drag-active {
+  border-color: var(--primary-color);
+  background-color: #F5F3FF; /* Light purple */
+}
+.photo-upload-area.has-file {
+  border-color: var(--success-color);
+  background-color: #F0FDF4; /* Light green */
+}
+.upload-placeholder p {
+  color: var(--muted-text-color);
+  margin: 0;
+}
+
+
+/* --- Privacy Notice --- */
+.privacy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #F5F3FF; /* Light purple */
+  border: 1px solid #C4B5FD; /* Darker purple */
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+.privacy-notice p {
+  font-size: 0.875rem; /* 14px */
+  color: #5B21B6; /* Dark purple text */
+  margin: 0;
+  line-height: 1.5;
+}
+
+
+/* --- Submit Button --- */
+.submit-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.submit-button:hover {
+  background-color: var(--primary-color-dark);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.submit-button:active {
+  transform: translateY(1px);
+}
+
+.submit-button:disabled {
+  background-color: #D1D5DB; /* Gray */
+  color: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.submit-button .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* --- Error States --- */
+.error-field {
+  border-color: var(--error-color);
+}
+.error-field:focus-visible {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+}
+.error-message {
+  color: var(--error-color);
+  font-size: 0.875rem; /* 14px */
+  margin-top: 0.5rem;
+}
+
+/* --- Base Animations --- */
+.animate-fade-in-up {
+  animation: fadeIn 0.5s ease-out, slideUp 0.5s ease-out;
+}
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out 0.1s;
+  animation-fill-mode: backwards;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); } to { transform: translateY(0); } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+
+/* --- NEW: Success Message Styles & Animations --- */
+.success-message-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.success-icon {
+    width: 4rem; /* 64px */
+    height: 4rem;
+    color: var(--success-color);
+}
+
+.success-title {
+    font-size: 1.875rem; /* 30px */
+    font-weight: 700;
+    color: var(--text-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.success-text {
+    font-size: 1rem;
+    color: var(--muted-text-color);
+    max-width: 450px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.success-buttons {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.success-button-primary, .success-button-secondary {
+    flex-grow: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.success-button-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+.success-button-primary:hover {
+    background-color: var(--primary-color-dark);
+}
+
+.success-button-secondary {
+    background-color: var(--card-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+.success-button-secondary:hover {
+    background-color: #F9FAFB;
+    border-color: #9CA3AF;
+}
+
+/* Success Message Animation */
+.animate-success {
+    animation: success-pop-in 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes success-pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

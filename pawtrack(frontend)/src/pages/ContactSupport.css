@@ -1,0 +1,140 @@
+/* General Layout */
+.contact-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+.contact-page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.contact-page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a202c; /* A dark gray for contrast */
+}
+
+.contact-page-header p {
+    font-size: 1.125rem;
+    color: #4a5568; /* A medium gray */
+    margin-top: 0.5rem;
+}
+
+.contact-content-area {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+}
+
+@media (min-width: 1024px) {
+    .contact-content-area {
+        grid-template-columns: 3fr 2fr;
+    }
+}
+
+/* Contact Card & Form */
+.contact-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.contact-card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #1a202c;
+}
+
+/* Reusing your form styles with slight adjustments */
+.contact-form .form-group { margin-bottom: 1.25rem; }
+.contact-form .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a5568; }
+.contact-form .input-wrapper { position: relative; }
+.contact-form .input-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #a0aec0; width: 1.25rem; height: 1.25rem; }
+.contact-form .form-input, .contact-form .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    padding-left: 2.5rem; /* Space for icon */
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+.contact-form .form-textarea { padding-left: 1rem; }
+.contact-form .form-input:focus, .contact-form .form-textarea:focus {
+    outline: none;
+    border-color: #8b5cf6; /* Focus color: A nice medium purple */
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); /* Soft purple glow */
+}
+
+.submit-button {
+    width: 100%;
+    background-color: #8b5cf6; /* Main button color: Medium purple */
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+.submit-button:hover { background-color: #7c3aed; } /* Darker purple on hover */
+.submit-button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+/* Contact Channels */
+.contact-divider {
+    text-align: center;
+    margin: 2rem 0;
+    color: #a0aec0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.contact-divider::before, .contact-divider::after {
+    content: '';
+    flex-grow: 1;
+    height: 1px;
+    background-color: #e2e8f0;
+}
+
+.contact-channels { display: flex; gap: 1.5rem; }
+.contact-channel { display: flex; align-items: center; gap: 1rem; }
+.contact-icon { width: 1.75rem; height: 1.75rem; color: #8b5cf6; /* Purple icons */ }
+.channel-title { font-weight: 600; color: #2d3748; }
+.channel-link { color: #4a5568; text-decoration: none; }
+.channel-link:hover { color: #8b5cf6; text-decoration: underline; } /* Purple hover on links */
+
+/* FAQ Section */
+.faq-section {
+    background-color: #f3e8ff; /* Very light purple background */
+    padding: 2rem;
+    border-radius: 12px;
+}
+.faq-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+.faq-icon { width: 1.75rem; height: 1.75rem; color: #a855f7; /* Brighter purple for FAQ icon */ }
+.faq-title { font-size: 1.5rem; font-weight: 600; color: #1a202c; }
+
+.faq-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.faq-item { border-bottom: 1px solid #e2e8f0; }
+.faq-question {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    border-radius: 10px;
+    align-items: center;
+    padding: 1rem 0;
+    font-weight: 500;
+    text-align: left;
+    color: #2d3748;
+}
+.faq-chevron { transition: transform 0.3s; width: 1.25rem; height: 1.25rem; color: #a855f7; /* Purple chevron */ }
+.faq-chevron.open { transform: rotate(180deg); }
+.faq-answer {
+    padding: 0 0 1rem 0;
+    color: #4a5568;
+    line-height: 1.6;
+}
