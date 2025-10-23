@@ -18,8 +18,8 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Unique Report Code e.g., RPT-1735234523
-    @Column(unique = true, nullable = false)
+    // ✅ Ensures perfect mapping to 'report_code' column
+    @Column(name = "report_code", unique = true, nullable = false)
     private String reportCode;
 
     @NotBlank
@@ -27,44 +27,63 @@ public class Report {
     private String location;
 
     @NotBlank
-    @Column(nullable = false)
-    private String animalType;   // Dog / Cat / etc.
+    @Column(name = "animal_type", nullable = false)
+    private String animalType;
 
     @NotBlank
     @Column(name = "animal_condition", nullable = false)
-    private String animalCondition;    // Injured / Sick / etc.
+    private String animalCondition;
 
     @NotBlank
-    @Column(nullable = false)
-    private String urgencyLevel; // critical / high / medium / low
+    @Column(name = "urgency_level", nullable = false)
+    private String urgencyLevel;
 
     @NotBlank
     @Column(nullable = false, length = 2000)
     private String description;
 
-    private String photoUrl;     // optional (for later image upload)
+    @Column(name = "photo_url")
+    private String photoUrl;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(name = "reporter_name", nullable = false)
     private String reporterName;
 
-    // phone number 10 digits (Indian number)
     @Pattern(regexp = "^[6-9]\\d{9}$")
-    @Column(nullable = false)
+    @Column(name = "reporter_phone", nullable = false)
     private String phoneNumber;
 
     @Column(nullable = false)
-    private String status = "pending"; // pending/in-progress/resolved
+    private String status = "pending";
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // ✅ Automatically sets createdAt and unique report code
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
 
+        // Generate unique code only if it's not set already
         if (this.reportCode == null || this.reportCode.isBlank()) {
             this.reportCode = "RPT-" + System.currentTimeMillis();
         }
+    }
+
+    // ✅ Helpful for debugging in console/logs
+    @Override
+    public String toString() {
+        return "Report{" +
+                "id=" + id +
+                ", reportCode='" + reportCode + '\'' +
+                ", location='" + location + '\'' +
+                ", animalType='" + animalType + '\'' +
+                ", animalCondition='" + animalCondition + '\'' +
+                ", urgencyLevel='" + urgencyLevel + '\'' +
+                ", reporterName='" + reporterName + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", status='" + status + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }

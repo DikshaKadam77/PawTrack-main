@@ -11,15 +11,19 @@ import {
   Phone,
   Calendar,
   X,
-  UserCheck,
+  // UserCheck, // Removed UserCheck icon
+  CheckCircle,
+  PlayCircle, // Added icon for "Take Case"
 } from "lucide-react";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+import { updateReportStatus } from "../api/reportApi"; // Make sure this is imported correctly
+import './NGODashboard.css'; // Ensure CSS is imported
 
-const API_URL = "http://localhost:8080/api/reports";
+const API_URL = "http://localhost:8080/api/reports"; // For initial fetch
 
 const NGODashboard = () => {
   const { user } = useAuth();
@@ -39,12 +43,9 @@ const NGODashboard = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [selectedLocationName, setSelectedLocationName] = useState("");
 
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [selectedCaseToAssign, setSelectedCaseToAssign] = useState(null);
-  const [selectedTeam, setSelectedTeam] = useState("");
-
-  const [rescueTeams, setRescueTeams] = useState([]);
-  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+  // Removed state related to team assignment
+  // const [rescueTeams, setRescueTeams] = useState([]); // Removed if not fetching real teams
+  // const [isLoadingTeams, setIsLoadingTeams] = useState(true); // Removed if not fetching real teams
 
   // ------------------ HELPERS ------------------
   const normalize = (v) => (v ?? "").toString().trim().toLowerCase();
@@ -72,7 +73,7 @@ const NGODashboard = () => {
           const status = r.status ?? "";
 
           return {
-            id: r.id,
+            id: r.id, // Keep backend ID
             reportCode: r.reportCode,
             date: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
             animal: r.animalType,
@@ -98,46 +99,16 @@ const NGODashboard = () => {
     };
 
     fetchReports();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
-  // ------------------ TEAMS (MOCKED) ------------------
-  useEffect(() => {
-    if (user && user.ngo_id) {
-      setIsLoadingTeams(true);
-      setTimeout(() => {
-        let teamsForThisNGO = [];
-        if (user.ngo_id === "ngo_12345") {
-          teamsForThisNGO = [
-            { id: "team_a", name: "Alpha Rescuers - Unit 1" },
-            { id: "team_b", name: "Alpha Rescuers - Unit 2" },
-          ];
-        } else if (user.ngo_id === "ngo_67890") {
-          teamsForThisNGO = [
-            { id: "team_c", name: "Karjat Animal Helpers" },
-            { id: "team_d", name: "Navi Mumbai Vets" },
-          ];
-        } else {
-          teamsForThisNGO = [{ id: "default_team", name: "Default Rescue Team" }];
-        }
-        setRescueTeams(teamsForThisNGO);
-        if (teamsForThisNGO.length > 0) setSelectedTeam(teamsForThisNGO[0].id);
-        setIsLoadingTeams(false);
-      }, 400);
-    } else {
-      setIsLoadingTeams(false);
-      setRescueTeams([]);
-    }
-  }, [user]);
 
   // ------------------ FILTERS ------------------
   const filteredCases = useMemo(() => {
-    const out = cases.filter((c) => {
+    return cases.filter((c) => {
       const statusOk = statusFilter === "all" || c.statusNorm === normalize(statusFilter);
       const urgencyOk = urgencyFilter === "all" || c.urgencyNorm === normalize(urgencyFilter);
       return statusOk && urgencyOk;
     });
-    console.log("[NGO] filteredCases length:", out.length);
-    return out;
   }, [cases, statusFilter, urgencyFilter]);
 
   // ------------------ STATS ------------------
@@ -153,7 +124,7 @@ const NGODashboard = () => {
 
   // ------------------ ACTIONS ------------------
   const handleCopyQRLink = (idOrCode) => {
-    const link = `${window.location.origin}/case/${idOrCode}`;
+    const link = `${window.location.origin}/case/${idOrCode}`; // Adjust route if needed
     navigator.clipboard.writeText(link).then(
       () => toast.success("Case link copied!"),
       () => toast.error("Failed to copy.")
@@ -176,74 +147,80 @@ const NGODashboard = () => {
     setSelectedLocationName("");
   };
 
-  const handleOpenAssignModal = (caseItem) => {
-    setSelectedCaseToAssign(caseItem);
-    setIsAssignModalOpen(true);
-    if (rescueTeams.length > 0) setSelectedTeam(rescueTeams[0].id);
-  };
+  // Handler Function for Taking Case
+  const handleTakeCase = async (caseItem) => {
+    if (!caseItem || !caseItem.id || caseItem.statusNorm !== 'pending') return;
 
-  const handleCloseAssignModal = () => {
-    setIsAssignModalOpen(false);
-    setSelectedCaseToAssign(null);
-  };
+    const caseIdToUpdate = caseItem.id;
+    const originalStatus = caseItem.status;
+    const originalStatusNorm = caseItem.statusNorm;
+    const reportCode = caseItem.reportCode || caseIdToUpdate;
 
-  const handleAssignTeam = (e) => {
-    e.preventDefault();
-    if (!selectedTeam || !selectedCaseToAssign) return;
-
-    const teamName = rescueTeams.find((t) => t.id === selectedTeam)?.name || "Selected Team";
-    toast.success(`Team "${teamName}" assigned to case ${selectedCaseToAssign.reportCode || selectedCaseToAssign.id}`);
-
-    // Optimistic local update
+    // Optimistic Update
     setCases((prev) =>
       prev.map((c) =>
-        c.id === selectedCaseToAssign.id ? { ...c, status: "in-progress", statusNorm: "in-progress" } : c
+        c.id === caseIdToUpdate ? { ...c, status: "in-progress", statusNorm: "in-progress" } : c
       )
     );
 
-    handleCloseAssignModal();
+    try {
+        await updateReportStatus(caseIdToUpdate, 'in-progress'); // API call
+        toast.success(`Case ${reportCode} is now in progress.`);
+    } catch (error) {
+        console.error("Error taking case (updating status):", error);
+        toast.error(`Failed to update status for case ${reportCode}. Reverting.`);
+        // Revert local state on error
+        setCases((prev) =>
+            prev.map((c) =>
+                c.id === caseIdToUpdate ? { ...c, status: originalStatus, statusNorm: originalStatusNorm } : c
+            )
+        );
+    }
+  };
+
+  // Handler Function for Marking as Treated
+  const handleMarkTreated = async (caseItem) => {
+    if (!caseItem || !caseItem.id) return;
+
+    const caseIdToUpdate = caseItem.id;
+    const originalStatus = caseItem.status;
+    const originalStatusNorm = caseItem.statusNorm;
+    const reportCode = caseItem.reportCode || caseIdToUpdate;
+
+    // Optimistic Update
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === caseIdToUpdate ? { ...c, status: "treated", statusNorm: "treated" } : c
+      )
+    );
+
+    try {
+        await updateReportStatus(caseIdToUpdate, 'treated'); // API call
+        toast.success(`Case ${reportCode} marked as treated.`);
+    } catch (error) {
+        console.error("Error marking case as treated:", error);
+        toast.error(`Failed to mark case ${reportCode} as treated. Reverting.`);
+        // Revert local state on error
+        setCases((prev) =>
+            prev.map((c) =>
+                c.id === caseIdToUpdate ? { ...c, status: originalStatus, statusNorm: originalStatusNorm } : c
+            )
+        );
+    }
   };
 
   const handleDownloadReport = () => {
+    // Download logic
     if (filteredCases.length === 0) {
       toast.error("No data to download!");
       return;
     }
-
-    const headers = [
-      "Report Code",
-      "Date",
-      "Animal",
-      "Condition",
-      "Urgency",
-      "Status",
-      "Description",
-      "Location",
-      "Reporter",
-      "Phone",
-    ];
+    const headers = ["Report Code", "Date", "Animal", "Condition", "Urgency", "Status", "Description", "Location", "Reporter", "Phone"];
     const escapeCSV = (str) => `"${String(str ?? "").replace(/"/g, '""')}"`;
     const rows = [headers.join(",")];
-
     filteredCases.forEach((c) => {
-      rows.push(
-        [
-          c.reportCode ?? c.id,
-          c.date,
-          c.animal,
-          c.condition,
-          c.urgency,
-          c.status,
-          c.description,
-          c.location,
-          c.reporter,
-          c.phone,
-        ]
-          .map(escapeCSV)
-          .join(",")
-      );
+      rows.push([c.reportCode ?? c.id, c.date, c.animal, c.condition, c.urgency, c.status, c.description, c.location, c.reporter, c.phone].map(escapeCSV).join(","));
     });
-
     const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
     const a = document.createElement("a");
     a.href = csvContent;
@@ -255,7 +232,7 @@ const NGODashboard = () => {
   };
 
   // ------------------ STYLE HELPERS ------------------
-  const getUrgencyColor = (urgency) => {
+  const getUrgencyClass = (urgency) => { // Returns CSS class name
     const u = normalize(urgency);
     if (u === "critical") return "urgency-critical";
     if (u === "high") return "urgency-high";
@@ -264,7 +241,7 @@ const NGODashboard = () => {
     return "urgency-medium";
   };
 
-  const getStatusColor = (status) => {
+  const getStatusClass = (status) => { // Returns CSS class name
     const s = normalize(status);
     if (s === "pending") return "status-pending";
     if (s === "in-progress") return "status-progress";
@@ -355,226 +332,117 @@ const NGODashboard = () => {
               </div>
             </div>
 
-            {/* Cases List — FORCED VISIBLE + DEBUG */}
-            <div
-              className="cases-list"
-              style={{
-                padding: 16,
-                background: "rgba(0,0,0,0.02)",
-                borderRadius: 8,
-                minHeight: 120,
-              }}
-            >
-              <div style={{ marginBottom: 12, fontWeight: 600 }}>
-                DEBUG: filteredCases.length = {filteredCases.length}
-              </div>
-
+            {/* Cases List */}
+            <div className="cases-list">
               {filteredCases.length > 0 ? (
-                <>
-                  {filteredCases.map((c, i) => (
-                    <div
-                      key={c.id ?? i}
-                      style={{
-                        background: "#fff",
-                        border: "1px solid #e2e2e2",
-                        borderRadius: 10,
-                        padding: 16,
-                        marginBottom: 12,
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                      }}
-                    >
-                      {/* Minimal visible card to avoid any CSS conflicts */}
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <div
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: "50%",
-                              background:
-                                normalize(c.status) === "pending"
-                                  ? "#f39c12"
-                                  : normalize(c.status) === "in-progress"
-                                  ? "#3498db"
-                                  : "#2ecc71",
-                            }}
-                          />
-                          <strong>{c.reportCode ?? c.id}</strong>
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              fontSize: 12,
-                              border: "1px solid #ddd",
-                              background:
-                                normalize(c.urgency) === "high"
-                                  ? "#fdecea"
-                                  : normalize(c.urgency) === "medium"
-                                  ? "#fff8e5"
-                                  : "#eef8ff",
-                            }}
-                          >
-                            {c.urgency || "-"}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", opacity: 0.8 }}>
-                          <Calendar size={16} />
-                          <span>{c.date}</span>
-                        </div>
+                filteredCases.map((c, i) => ( // Added index 'i' for fallback key
+                  <div key={c.id ?? `case-${i}`} className="case-card animate-slide-up">
+                    <div className="case-header">
+                       <div className="case-id-section">
+                        <span className={`case-status-indicator ${getStatusClass(c.status)}`}></span>
+                        <span className="case-id">{c.reportCode ?? c.id ?? 'Unknown ID'}</span>
+                        <span className={`urgency-badge ${getUrgencyClass(c.urgency)}`}>{c.urgency || '-'}</span>
                       </div>
-
-                      <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                        {c.condition} {c.animal}
-                      </div>
-                      <div style={{ marginBottom: 6 }}>{c.description}</div>
-
-                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 14 }}>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <MapPin size={16} />
-                          <span>{c.location}</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <Phone size={16} />
-                          <span>
-                            {c.reporter} • {c.phone}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                        <button onClick={() => handleCopyQRLink(c.reportCode ?? c.id)}>Copy Link</button>
-                        <button onClick={() => handleViewOnMap(c)}>View on Map</button>
-                        <button onClick={() => handleOpenAssignModal(c)}>Assign Team</button>
+                      <div className="case-date">
+                        <Calendar className="w-4 h-4" />
+                        <span>{c.date || 'N/A'}</span>
                       </div>
                     </div>
-                  ))}
 
-                  {/* Show raw JSON so we know exactly what's in state */}
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ fontWeight: 600, marginBottom: 6 }}>DEBUG: filteredCases JSON</div>
-                    <pre
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        fontSize: 12,
-                        background: "#f7f7f7",
-                        padding: 12,
-                        borderRadius: 8,
-                        border: "1px solid #eee",
-                        maxHeight: 260,
-                        overflow: "auto",
-                      }}
-                    >
-                      {JSON.stringify(filteredCases, null, 2)}
-                    </pre>
+                    <div className="case-content">
+                      <h3 className="animal-title">{(c.condition || 'Unknown Condition')} {(c.animal || 'Unknown Animal')}</h3>
+                      <p className="case-description">{c.description || 'No description provided.'}</p>
+                      <div className="case-details">
+                        <div className="detail-item">
+                          <MapPin className="w-4 h-4" />
+                          <span>{c.location || 'Location not provided.'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <Phone className="w-4 h-4" />
+                          <span>{c.reporter || 'Unknown Reporter'} • {c.phone || 'No Phone'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="case-footer">
+                      <button
+                        onClick={() => handleCopyQRLink(c.reportCode ?? c.id)}
+                        className="case-action-btn primary"
+                        disabled={!(c.reportCode ?? c.id)}
+                      >
+                        <Copy className="w-4 h-4" /> Copy Link
+                      </button>
+                      <button
+                        onClick={() => handleViewOnMap(c)}
+                        disabled={!c.position}
+                        className="case-action-btn primary"
+                      >
+                        <MapPin className="w-4 h-4" /> View Map
+                      </button>
+                      {/* Show "Take Case" only if status is 'pending' */}
+                      {c.statusNorm === 'pending' && (
+                        <button
+                          onClick={() => handleTakeCase(c)}
+                          className="case-action-btn primary"
+                        >
+                          <PlayCircle className="w-4 h-4" /> Take Case
+                        </button>
+                      )}
+                      {/* Show "Mark as Treated" only if status is NOT 'treated' */}
+                      {c.statusNorm !== 'treated' && (
+                        <button
+                          onClick={() => handleMarkTreated(c)}
+                          className="case-action-btn primary"
+                        >
+                          <CheckCircle className="w-4 h-4" /> Mark as Treated
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </>
+                ))
               ) : (
-                <p>No cases found.</p>
+                <p className="no-cases-found">No cases found matching the current filters.</p>
               )}
             </div>
           </div>
 
           {/* Map Modal */}
           {isMapModalOpen && selectedLocation && (
-            <div className="modal-overlay" onClick={handleCloseMap}>
-              <div
-                className="modal-content modal-content-map"
-                onClick={(e) => e.stopPropagation()}
-                style={{ background: "#fff" }}
-              >
-                <div className="modal-header">
-                  <h3 className="modal-title">Case Location</h3>
-                  <button onClick={handleCloseMap} className="modal-close-btn">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="modal-body">
-                  <p className="modal-location">
-                    Showing map for: <strong>{selectedLocationName}</strong>
-                  </p>
-                  {!isLoaded ? (
-                    <div className="map-placeholder">Loading Map...</div>
-                  ) : (
-                    <GoogleMap
-                      mapContainerStyle={mapContainerStyle}
-                      center={selectedLocation}
-                      zoom={15}
-                      options={mapOptions}
-                    >
-                      <Marker position={selectedLocation} />
-                    </GoogleMap>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+             <div className="modal-overlay" onClick={handleCloseMap}>
+               <div
+                 className="modal-content modal-content-map"
+                 onClick={(e) => e.stopPropagation()}
+                 style={{ background: "#fff" }}
+               >
+                 <div className="modal-header">
+                   <h3 className="modal-title">Case Location</h3>
+                   <button onClick={handleCloseMap} className="modal-close-btn">
+                     <X className="w-5 h-5" />
+                   </button>
+                 </div>
+                 <div className="modal-body">
+                   <p className="modal-location">
+                     Showing map for: <strong>{selectedLocationName}</strong>
+                   </p>
+                   {!isLoaded ? (
+                     <div className="map-placeholder">Loading Map...</div>
+                   ) : (
+                     <GoogleMap
+                       mapContainerStyle={mapContainerStyle}
+                       center={selectedLocation}
+                       zoom={15}
+                       options={mapOptions}
+                     >
+                       <Marker position={selectedLocation} />
+                     </GoogleMap>
+                   )}
+                 </div>
+               </div>
+             </div>
+           )}
 
-          {/* Assign Team Modal */}
-          {isAssignModalOpen && selectedCaseToAssign && (
-            <div className="modal-overlay" onClick={handleCloseAssignModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ background: "#fff" }}>
-                <form onSubmit={handleAssignTeam}>
-                  <div className="modal-header">
-                    <h3 className="modal-title">Assign Team to Case</h3>
-                    <button
-                      type="button"
-                      onClick={handleCloseAssignModal}
-                      className="modal-close-btn"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="modal-body">
-                    <p className="modal-location">
-                      Case ID: <strong>{selectedCaseToAssign.reportCode ?? selectedCaseToAssign.id}</strong>
-                    </p>
-                    <div className="modal-form-group">
-                      <label htmlFor="teamSelect" className="modal-label">
-                        Select a Rescue Team:
-                      </label>
-                      <select
-                        id="teamSelect"
-                        className="modal-select"
-                        value={selectedTeam}
-                        onChange={(e) => setSelectedTeam(e.target.value)}
-                        disabled={isLoadingTeams}
-                        required
-                      >
-                        {isLoadingTeams ? (
-                          <option value="" disabled>
-                            Loading teams...
-                          </option>
-                        ) : rescueTeams.length > 0 ? (
-                          rescueTeams.map((team) => (
-                            <option key={team.id} value={team.id}>
-                              {team.name}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="" disabled>
-                            No teams found.
-                          </option>
-                        )}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="modal-btn" onClick={handleCloseAssignModal}>
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="modal-btn primary"
-                      disabled={isLoadingTeams || rescueTeams.length === 0}
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      Assign Team
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+          {/* Assign Team Modal Removed */}
+
         </div>
       </main>
       <Footer />

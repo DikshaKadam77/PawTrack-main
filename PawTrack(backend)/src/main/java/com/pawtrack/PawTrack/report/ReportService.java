@@ -2,12 +2,13 @@ package com.pawtrack.PawTrack.report;
 
 import com.pawtrack.PawTrack.report.dto.ReportRequest;
 import com.pawtrack.PawTrack.report.dto.StatusUpdateRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
 
 @Service
-@Transactional
 public class ReportService {
 
     private final ReportRepository reportRepository;
@@ -38,16 +39,32 @@ public class ReportService {
         return reportRepository.findAll();
     }
 
-    // ✅ Get a single report by ID
+    // ✅ Get report by ID
     public Report getReportById(Long id) {
         return reportRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Report not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found with ID: " + id));
     }
 
-    // ✅ Update only status
+    // ✅ Update ONLY status
     public Report updateStatus(Long id, StatusUpdateRequest request) {
         Report report = getReportById(id);
         report.setStatus(request.getStatus());
         return reportRepository.save(report);
+    }
+
+    // 🆕 ✅ Get report by unique report code (for QR search)
+    public Report getReportByReportCode(String reportCode) {
+        System.out.println("🔍 Looking for reportCode: " + reportCode);
+        return reportRepository.findByReportCode(reportCode)
+                .map(r -> {
+                    System.out.println("✅ FOUND REPORT: " + r.getReportCode());
+                    return r;
+                })
+                .orElseThrow(() -> {
+                    System.out.println("❌ REPORT NOT FOUND in DB");
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "No report found with code: " + reportCode);
+                });
     }
 }

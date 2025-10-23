@@ -13,7 +13,6 @@ import ReportAnimal from "./pages/ReportAnimal";
 import NGODashboard from "./pages/NGODashboard";
 import DonatePage from "./pages/Donatepage";
 import ScanQR from "./pages/ScanQR";
-import ContactSupportPage from "./pages/ContactSupport";
 
 
 // CSS Imports
@@ -21,7 +20,6 @@ import "./Components/Header.css";
 import "./pages/login.css";
 import "./pages/ReportAnimal.css";
 import "./pages/donatepage.css";
-import "./pages/ContactSupport.css";
 import "./styles.css";
 function App() {
   return (
@@ -41,7 +39,6 @@ function App() {
           <Route path="/dashboard" element={<NGODashboard />} />
           <Route path="/scan" element={<ScanQR />} />
           <Route path="/donate" element={<DonatePage />} />
-          <Route path="/contact-support" element={<ContactSupportPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

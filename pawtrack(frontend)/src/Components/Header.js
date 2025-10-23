@@ -18,7 +18,10 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isLoggedIn = !!user;
+  
+  // ✅ Corrected: Check if user object exists.
+  const isLoggedIn = !!user; 
+  
   const [activeLink, setActiveLink] = useState(location.pathname);
 
   useEffect(() => {
@@ -85,8 +88,8 @@ const Header = () => {
             <span>Scan QR</span>
           </Link>
 
-          {/* Donate: Citizens ONLY */}
-          {isLoggedIn && user?.role === "Citizen" && (
+          {/* ✅ Corrected: Donate link visible to Citizens & Guests/Not Logged In */}
+          {(!isLoggedIn || user?.role === "Citizen") && (
             <Link to="/donate" className={linkClass("/donate")}>
               <span>Donate</span>
             </Link>
@@ -95,7 +98,7 @@ const Header = () => {
 
         {/* RIGHT SECTION: Action Buttons */}
         <div className="header-right flex items-center gap-3">
-          {/* Donate Button: Guests ONLY */}
+          {/* ✅ Corrected: Donate Button for Guests ONLY */}
           {!isLoggedIn && (
             <Link to="/donate" className="btn btn-accent">
               ₹ Donate
@@ -125,5 +128,4 @@ const Header = () => {
     </header>
   );
 };
-
 export default Header;

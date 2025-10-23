@@ -64,13 +64,13 @@ const LoginPage = () => {
         } else {
           userData = {
             // Need a default firstName for the toast message if role is Citizen
-            firstName: formData.firstName || 'User',
+            firstName: formData.firstName ,
             role: 'Citizen',
             ngo_id: null
           };
         }
         // Use a generic welcome message for sign-in or include firstName if available
-        toast.success(`Welcome back, ${userData.firstName}!`);
+        toast.success(`Welcome back ${userData.firstName}!`);
 
       } else { // Sign Up logic
         const roleInfo = userTypes.find(type => type.id === selectedRole);
@@ -188,10 +188,6 @@ const LoginPage = () => {
               {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> : (activeTab === "signin" ? "Sign In" : "Sign Up")}
             </button>
           </form>
-          {/* Support Link */}
-          <div className="support-link">
-            <span>Need help? </span><a href="/contact" className="contact-support">Contact Support</a>
-          </div>
         </div>
       </main>
       <Footer />

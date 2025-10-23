@@ -40,7 +40,7 @@ const ReportAnimal = () => {
   const [submissionStatus, setSubmissionStatus] = useState("idle"); // 'idle', 'submitting', 'success', 'error'
   const [dragActive, setDragActive] = useState(false);
 
-  const animalTypes = ["Dog", "Cat", "Horse", "Cow", "Goat", "Sheep", "Pig"];
+  const animalTypes = ["Dog", "Cat", "Cow", "Goat", "Sheep", "Pig"];
   const conditions = [
     "Injured",
     "Sick",
@@ -48,9 +48,7 @@ const ReportAnimal = () => {
     "Abandoned",
     "Lost",
     "Abused",
-    "Trapped",
-    "Dead",
-    "Other",
+    "Trapped"
   ];
   const urgencyLevels = [
     { value: "critical", label: "Critical - Immediate attention needed" },
