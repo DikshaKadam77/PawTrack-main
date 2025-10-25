@@ -1,12 +1,20 @@
-
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Heart, DollarSign, Zap, Star, ShieldCheck, FileText, Users, Target, Activity, IndianRupeeIcon, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Heart,
+  Zap,
+  Star,
+  ShieldCheck,
+  FileText,
+  IndianRupeeIcon,
+  Loader2,
+} from "lucide-react";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import PaymentSuccess from "../Components/PaymentSuccess";
 import { BASE_URL } from "../api/config";
 import { toast } from "react-hot-toast";
 
+// ✅ Dynamically load Razorpay script
 const loadRazorpayScript = (src) => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -21,8 +29,7 @@ const DonatePage = () => {
   const [donationType, setDonationType] = useState("one-time");
   const [activeSelection, setActiveSelection] = useState(500);
   const [customAmount, setCustomAmount] = useState("");
-  const [paymentStatus, setPaymentStatus] = useState("idle"); // 'idle', 'processing', 'success', 'error'
-  const statsRef = useRef(null);
+  const [paymentStatus, setPaymentStatus] = useState("idle"); // idle | processing | success
 
   const donationAmounts = [
     { amount: 250, icon: Heart, description: "Feeds 5 animals" },
@@ -45,13 +52,12 @@ const DonatePage = () => {
       : "Select an amount to see your impact.";
   }, [activeSelection, customAmount, donationAmounts]);
 
-  const displayAmount = useMemo(() => {
-    const amount = activeSelection === 'custom' ? (Number(customAmount) || 0) : activeSelection;
-    return Math.round(amount); // Ensure it's an integer
-  }, [activeSelection, customAmount]);
+  const displayAmount =
+    activeSelection === "custom"
+      ? Number(customAmount) || 0
+      : activeSelection;
 
-  useEffect(() => { /* ... counter animation logic ... */ });
-
+  // ✅ Razorpay Payment Handler
   const handlePayment = async () => {
     if (displayAmount <= 0) {
       toast.error("Please enter a valid donation amount.");
@@ -64,54 +70,97 @@ const DonatePage = () => {
       "https://checkout.razorpay.com/v1/checkout.js"
     );
 
-    if (!res) {
-      toast.error("Razorpay SDK failed to load. Are you online?");
+    if (!sdkLoaded) {
+      toast.error("Failed to load Razorpay SDK. Please check your connection.");
       setPaymentStatus("idle");
       return;
     }
 
     try {
+      // ✅ Step 1: Create order from backend
       const response = await fetch(`${BASE_URL}/payment/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: displayAmount }),
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to create order");
-      }
-
+      if (!response.ok) throw new Error("Failed to create Razorpay order");
       const order = await response.json();
       console.log("✅ Razorpay order created:", order);
 
-    // ✅ Step 2: Open Razorpay Checkout
-    const options = {
-      key: "YOUR_RAZORPAY_KEY_ID", // ✅ !! REPLACE THIS with your Razorpay Key ID !!
-      amount: order.amount_due, // Amount in paise (comes from backend)
-      currency: "INR",
-      name: "Paw Track Foundation",
-      description: "Donation for Animal Welfare in Karjat",
-      image: "/logo.png", //
-      order_id: order.id, // ✅ Use the REAL order_id from your backend
-      handler: function (response) {
-        console.log("Payment Successful", response);
-        // You should ideally verify this payment on your backend here
-        setPaymentStatus("success");
-      },
-      prefill: { name: "Valued Supporter", email: "supporter@example.com", contact: "9999999999" },
-      theme: { color: "#7c3aed" }, // Match your primary color
-    };
+      // ✅ Step 2: Open Razorpay Checkout (LIVE MODE)
+      const options = {
+        key: "rzp_live_RXZvvxnZgHn8QA", // ✅ Your LIVE Razorpay key
+        amount: order.amount,
+        currency: order.currency,
+        name: "PawTrack Foundation",
+        description: "Donation for Animal Welfare in Karjat",
+        image: "/logo.png",
+        order_id: order.id,
 
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.on('payment.failed', function (response) {
-      console.error("Payment Failed", response.error);
-      toast.error(`Payment Failed: ${response.error.description}`);
+        handler: async function (response) {
+          console.log("✅ Payment Success:", response);
+          toast.success("Thank you for your kind donation ❤️");
+
+          // ✅ Step 3: Save donation to backend
+          try {
+            const donationData = {
+              donorName: "Anonymous Donor",
+              amount: displayAmount,
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              status: "SUCCESS",
+              donationType,
+              date: new Date().toISOString(),
+            };
+
+            const saveResponse = await fetch(
+              `${BASE_URL}/payment/save-donation`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(donationData),
+              }
+            );
+
+            if (!saveResponse.ok) throw new Error("Failed to save donation");
+
+            console.log("✅ Donation saved successfully!");
+            setPaymentStatus("success");
+          } catch (err) {
+            console.error("❌ Failed to save donation:", err);
+            toast.error("Payment successful, but donation not saved!");
+            setPaymentStatus("success");
+          }
+        },
+
+        prefill: {
+          name: "Animal Lover",
+          email: "supporter@example.com",
+          contact: "9999999999",
+        },
+
+        theme: { color: "#7c3aed" },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+
+      paymentObject.on("payment.failed", (response) => {
+        console.error("❌ Payment Failed:", response.error);
+        toast.error(`Payment Failed: ${response.error.description}`);
+        setPaymentStatus("idle");
+      });
+
+      paymentObject.open();
+    } catch (error) {
+      console.error("❌ Payment Error:", error);
+      toast.error("Something went wrong. Please try again later.");
       setPaymentStatus("idle");
-    });
-    paymentObject.open();
+    }
   };
 
+  // ✅ Payment success screen
   if (paymentStatus === "success") {
     return (
       <div className="bg-background">
@@ -141,7 +190,8 @@ const DonatePage = () => {
                   Every Donation Saves Lives
                 </h1>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Your contribution creates a ripple of kindness, funding rescue operations in Karjat and ensuring every animal gets the care they need.
+                  Your donation funds rescue operations and medical care for
+                  injured and abandoned animals in Karjat.
                 </p>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2 text-foreground">
@@ -153,7 +203,8 @@ const DonatePage = () => {
                   </div>
                 </div>
               </div>
-              {/* ... (right side ripple) ... */}
+
+              {/* ---------- HEART ANIMATION ---------- */}
               <div className="ripple-container">
                 <div className="central-ripple-icon">
                   <Heart fill="currentColor" className="w-8 h-8" />
@@ -167,8 +218,12 @@ const DonatePage = () => {
             {/* ---------- DONATION CARD ---------- */}
             <div className="donation-card">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-foreground">Choose Your Impact</h2>
-                <p className="text-muted-foreground">Select an amount to see the direct impact on animal lives.</p>
+                <h2 className="text-3xl font-bold text-foreground">
+                  Choose Your Impact
+                </h2>
+                <p className="text-muted-foreground">
+                  Select an amount to see how your donation helps.
+                </p>
               </div>
 
               <div className="max-w-3xl mx-auto">

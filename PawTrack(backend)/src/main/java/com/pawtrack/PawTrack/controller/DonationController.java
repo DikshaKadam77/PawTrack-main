@@ -20,38 +20,62 @@ public class DonationController {
 
     // ✅ Create / Save a new donation
     @PostMapping
-    public ResponseEntity<Donation> saveDonation(@RequestBody Donation donation) {
+    public ResponseEntity<?> saveDonation(@RequestBody Donation donation) {
         try {
             Donation savedDonation = donationRepository.save(donation);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDonation);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to save donation: " + e.getMessage());
         }
     }
 
     // ✅ Get all donations
     @GetMapping
     public ResponseEntity<List<Donation>> getAllDonations() {
-        List<Donation> donations = donationRepository.findAll();
-        return ResponseEntity.ok(donations);
+        try {
+            List<Donation> donations = donationRepository.findAll();
+            return ResponseEntity.ok(donations);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // ✅ Get donation by ID (optional but helpful for follow-ups)
+    // ✅ Get donation by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Donation> getDonationById(@PathVariable Long id) {
-        Optional<Donation> donation = donationRepository.findById(id);
-        return donation.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> getDonationById(@PathVariable Long id) {
+        try {
+            Optional<Donation> donation = donationRepository.findById(id);
+            if (donation.isPresent()) {
+                return ResponseEntity.ok(donation.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Donation not found with ID: " + id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving donation: " + e.getMessage());
+        }
     }
 
-    // ✅ Delete donation by ID (optional for admin panel)
+    // ✅ Delete donation by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDonation(@PathVariable Long id) {
-        if (donationRepository.existsById(id)) {
-            donationRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> deleteDonation(@PathVariable Long id) {
+        try {
+            if (donationRepository.existsById(id)) {
+                donationRepository.deleteById(id);
+                return ResponseEntity.ok("Donation deleted successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Donation not found with ID: " + id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting donation: " + e.getMessage());
         }
     }
 }
