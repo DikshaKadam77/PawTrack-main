@@ -90,7 +90,7 @@ const DonatePage = () => {
 
       // ✅ Step 2: Open Razorpay Checkout (LIVE MODE)
       const options = {
-        key: "rzp_live_RXZvvxnZgHn8QA", // ✅ Your LIVE Razorpay key
+        key: "rzp_test_RXZltuX3tia7le", // ✅ Your LIVE Razorpay key
         amount: order.amount,
         currency: order.currency,
         name: "PawTrack Foundation",
